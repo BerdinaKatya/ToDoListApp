@@ -7,11 +7,8 @@
 
 import UIKit
 
-protocol NewTaskViewControllerDelegate: AnyObject {
-    func reloadData()
-}
-
 final class TaskListViewController: UITableViewController {
+    private let storageManager = StorageManager.shared
     private var taskList: [ToDoTask] = []
     private let cellId = "task"
 
@@ -20,13 +17,11 @@ final class TaskListViewController: UITableViewController {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: cellId)
         view.backgroundColor = .white
         setupNavigationBar()
-        fetchData()
+        storageManager.fetchData()
     }
     
     @objc private func addNewTask() {
-        let newTaskVC = NewTaskViewController()
-        newTaskVC.delegate = self
-        present(newTaskVC, animated: true)
+        showAlert(withTitle: "New Task", andMessage: "What do you want to do?")
     }
     
     // MARK: - UITableViewDataSource
@@ -43,23 +38,28 @@ final class TaskListViewController: UITableViewController {
         return cell
     }
     
-    private func fetchData() {
-        guard let appDelegate = (UIApplication.shared.delegate as? AppDelegate) else { return }
-        let fetchRequest = ToDoTask.fetchRequest()
-        
-        do {
-            taskList = try appDelegate.persistentContainer.viewContext.fetch(fetchRequest)
-        } catch {
-            print(error.localizedDescription)
+    // MARK: - Private Methods
+    private func save(taskName: String) {
+        StorageManager.shared.save(taskName: taskName) { newTask in
+            self.taskList.append(newTask)
+            let cellIndex = IndexPath(row: self.taskList.count - 1, section: 0)
+            self.tableView.insertRows(at: [cellIndex], with: .automatic)
         }
     }
-}
-
-// MARK: - NewTaskViewControllerDelegate
-extension TaskListViewController: NewTaskViewControllerDelegate {
-    func reloadData() {
-        fetchData()
-        tableView.reloadData()
+    
+    private func showAlert(withTitle title: String, andMessage message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        let saveAction = UIAlertAction(title: "Save Task", style: .default) { [unowned self] _ in
+            guard let task = alert.textFields?.first?.text, !task.isEmpty else { return }
+            save(taskName: task)
+        }
+        let cancelAction = UIAlertAction(title: "Cancel", style: .destructive)
+        alert.addAction(saveAction)
+        alert.addAction(cancelAction)
+        alert.addTextField { textField in
+            textField.placeholder = "New Task"
+        }
+        present(alert, animated: true)
     }
 }
 
