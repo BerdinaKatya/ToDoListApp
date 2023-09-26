@@ -22,10 +22,6 @@ final class TaskListViewController: UITableViewController {
         }
     }
     
-    @objc private func addNewTask() {
-        showAlert(withTitle: "New Task", andMessage: "What do you want to do?")
-    }
-    
     // MARK: - UITableViewDataSource
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         taskList.count
@@ -41,6 +37,10 @@ final class TaskListViewController: UITableViewController {
     }
     
     // MARK: - Private Methods
+    @objc private func addNewTask() {
+        showAlert(withTitle: "New Task", andMessage: "What do you want to do?")
+    }
+    
     private func save(taskName: String) {
         StorageManager.shared.save(taskName: taskName) { newTask in
             self.taskList.append(newTask)
@@ -69,6 +69,7 @@ final class TaskListViewController: UITableViewController {
         let updateAction = UIAlertAction(title: "Update Task", style: .default) { [unowned self] _ in
             guard let taskName = alert.textFields?.first?.text, !taskName.isEmpty else { return }
             storageManager.editing(task: task, newName: taskName)
+            tableView.reloadData()
         }
         let cancelAction = UIAlertAction(title: "Cancel", style: .destructive)
         alert.addAction(updateAction)
@@ -125,7 +126,6 @@ private extension TaskListViewController {
             target: self,
             action: #selector(addNewTask)
         )
-        
         navigationController?.navigationBar.tintColor = .white
     }
 }

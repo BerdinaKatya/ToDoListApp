@@ -25,7 +25,6 @@ final class StorageManager {
         return container
     }()
     
-    
     // MARK: - Public Methods
     func fetchData(complition: @escaping ([ToDoTask]) -> Void) {
         let fetchRequest = ToDoTask.fetchRequest()
