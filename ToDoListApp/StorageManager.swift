@@ -11,6 +11,8 @@ import CoreData
 final class StorageManager {
     static let shared = StorageManager()
     
+    private init() {}
+    
     // MARK: - Core Data stack
     lazy var persistentContainer: NSPersistentContainer = {
         
@@ -23,25 +25,14 @@ final class StorageManager {
         return container
     }()
     
-    // MARK: - Core Data Saving support
-    func saveContext () {
-        let context = persistentContainer.viewContext
-        if context.hasChanges {
-            do {
-                try context.save()
-            } catch {
-                let nserror = error as NSError
-                fatalError("Unresolved error \(nserror), \(nserror.userInfo)")
-            }
-        }
-    }
     
     // MARK: - Public Methods
-    func fetchData() {
+    func fetchData(complition: @escaping ([ToDoTask]) -> Void) {
         let fetchRequest = ToDoTask.fetchRequest()
         
         do {
             let taskList = try persistentContainer.viewContext.fetch(fetchRequest)
+            complition(taskList)
         } catch {
             print(error.localizedDescription)
         }
@@ -64,5 +55,16 @@ final class StorageManager {
         saveContext()
     }
     
-    private init() {}
+    // MARK: - Core Data Saving support
+    func saveContext () {
+        let context = persistentContainer.viewContext
+        if context.hasChanges {
+            do {
+                try context.save()
+            } catch {
+                let nserror = error as NSError
+                fatalError("Unresolved error \(nserror), \(nserror.userInfo)")
+            }
+        }
+    }
 }

@@ -17,7 +17,9 @@ final class TaskListViewController: UITableViewController {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: cellId)
         view.backgroundColor = .white
         setupNavigationBar()
-        storageManager.fetchData()
+        storageManager.fetchData { [unowned self] tasks in
+            self.taskList = tasks
+        }
     }
     
     @objc private func addNewTask() {
@@ -61,6 +63,44 @@ final class TaskListViewController: UITableViewController {
         }
         present(alert, animated: true)
     }
+    
+    private func showUpdateAlert(for task: ToDoTask, withTitle title: String, andMessage message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        let updateAction = UIAlertAction(title: "Update Task", style: .default) { [unowned self] _ in
+            guard let taskName = alert.textFields?.first?.text, !taskName.isEmpty else { return }
+            storageManager.editing(task: task, newName: taskName)
+        }
+        let cancelAction = UIAlertAction(title: "Cancel", style: .destructive)
+        alert.addAction(updateAction)
+        alert.addAction(cancelAction)
+        alert.addTextField { textField in
+            textField.placeholder = "Update Task"
+        }
+        present(alert, animated: true)
+    }
+}
+
+// MARK: - UITableViewDelegate
+extension TaskListViewController {
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        showUpdateAlert(
+            for: taskList[indexPath.row],
+            withTitle: "Update Task",
+            andMessage: "What do you want to do?"
+        )
+        tableView.reloadRows(at: [indexPath], with: .fade)
+    }
+    
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        let task = taskList[indexPath.row]
+        
+        if editingStyle == .delete {
+            taskList.remove(at: indexPath.row)
+            storageManager.deleteContact(task: task)
+            tableView.deleteRows(at: [indexPath], with: .fade)
+        }
+    }
 }
 
 // MARK: - Setup UI
@@ -89,3 +129,4 @@ private extension TaskListViewController {
         navigationController?.navigationBar.tintColor = .white
     }
 }
+
